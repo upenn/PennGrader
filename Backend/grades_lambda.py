@@ -83,6 +83,9 @@ def get_grades(homework_id, student_id = None):
         filtering_exp = Key('homework_id').eq(homework_id)
     response = table.scan(FilterExpression=filtering_exp)
     items = response.get('Items')
+    if len(response.get('LastEvaluatedKey')) > 0:
+        response = table.scan(FilterExpression=filtering_exp,ExclusiveStartKey=response.get('LastEvaluatedKey'))
+        items.append(response.get('Items'))
     return items
     
     

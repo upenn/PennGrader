@@ -85,7 +85,7 @@ def get_grades(homework_id, student_id = None):
     items = response.get('Items')
     if len(response.get('LastEvaluatedKey')) > 0:
         response = table.scan(FilterExpression=filtering_exp,ExclusiveStartKey=response.get('LastEvaluatedKey'))
-        items.append(response.get('Items'))
+        items = items + response.get('Items')
     return items
     
     

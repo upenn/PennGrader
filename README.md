@@ -121,6 +121,13 @@ backend.update_test_cases()
 A success message will print once the operation has succeeded. If loading a lot of external libraries this might take a few minutes.
 
 ### Lambdas
+
+AWS Lambda is an incredibly cool, but also quite complex system to set up.  We recommend that you use an existing API Gateway URL and set of Lambda Layers.
+
+* The Gateway URL exports a Python function (from Penngrader) to a given URL, with a REST interface and an API key.
+* The Lambda needs to be granted appropriate DynamoDB permissions and logger permissions.
+* The Lambda makes use of Python libraries, in our case including Pandas and Numpy.  You can set these up in an S3 volume and add these to a Layer, to make these accessible to the Penngrader.  However note that simply running `pip install -t package pandas numpy pytz` will be inadequate: you need special multi-Linux versions of the C libraries.  See https://korniichuk.medium.com/lambda-with-pandas-fd81aa2ff25e for more info.
+
 #### Grader
 
 The _Grader_ lambda gets triggered from an API Gateway URL from the student's PennGrader client. The student's client as defined above will serialize its answer and make a POST request to the lambda with the following body parameters: 

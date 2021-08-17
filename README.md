@@ -116,7 +116,7 @@ backend.update_metadata(DEADLINE, TOTAL_SCORE, MAX_DAILY_TEST_CASE_SUBMISSIONS)
 
 `TOTAL_SCORE` represents the total number of points the homework is worth and should equal the sum of all test cases weights.
 
-`DEADLINE` represents the deadline of the homework, with format: _YYYY-MM-DD HH:MM A_.
+`DEADLINE` represents the deadline of the homework, with format: _YYYY-MM-DD HH:MM A_.  **Please note this deadline is in UTC**.
 
 `MAX_DAILY_TEST_CASE_SUBMISSIONS` represents the number of allowed submissions per test case per day.
 
@@ -148,7 +148,7 @@ AWS Lambda is an incredibly cool, but also quite complex system to set up.  We r
 
 * The Gateway URL exports a Python function (from Penngrader) to a given URL, with a REST interface and an API key.
 * The Lambda needs to be granted appropriate DynamoDB permissions and logger permissions.
-* The Lambda makes use of Python libraries, in our case including Pandas and Numpy.  You can set these up in an S3 volume and add these to a Layer, to make these accessible to the Penngrader.  However note that simply running `pip install -t package pandas numpy pytz` will be inadequate: you need special multi-Linux versions of the C libraries.  See https://korniichuk.medium.com/lambda-with-pandas-fd81aa2ff25e for more info.
+* The Lambda makes use of Python libraries, in our case including Pandas and Numpy.  You can set these up in an S3 volume and add these to a Layer, to make these accessible to the Penngrader.  **However note that simply running `pip install -t package pandas numpy pytz` will be inadequate: you need special multi-Linux versions of the C libraries.  See https://korniichuk.medium.com/lambda-with-pandas-fd81aa2ff25e for more info.**
 
 #### Grader
 
@@ -160,7 +160,7 @@ The lambda will proceed by downloading the correct serialized _test_case_'s and 
 
 #### Grades
 
-The grades lamabda interfaces the TeacherBackend and student notebook with the Gradebook. Using this API Gateway trigged lambda the TeacherBackend client can request all grades for a given homework. The payload body used to trigger this lambda will need to include 
+The grades lambda interfaces the TeacherBackend and student notebook with the Gradebook. Using this API Gateway triggered lambda the TeacherBackend client can request all grades for a given homework. The payload body used to trigger this lambda will need to include 
 
 `{'homework_id' : ______, 'secret_key' : ________, 'request_type' : ________ }`
 

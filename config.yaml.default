@@ -1,0 +1,7 @@
+secret_id: "add-me"
+homework_num: 0
+
+config_api_url: 'https://...amazonaws.com/default/HomeworkConfig'
+config_api_key: '...'
+grades_api_url: 'https://...amazonaws.com/default/Grades'
+grades_api_key: ..

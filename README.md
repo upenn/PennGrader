@@ -1,15 +1,15 @@
 # PennGrader
-Welcome to the PennGrader!
+Welcome to the PennGrader!  This autograder project was created by Leo Murri at the University of Pennsylvania, and it is currently maintained by the CIS faculty, staff, and students at Penn.
 
 Here at PennGrader, we believe that learning comes from lots of practice...and from making lots of mistakes. 
 
-After many years as a student I found myself very frustrated in the following homework timeline: struggle on a homework assignment for weeks, submit something that may or may not be right and then wait a few more weeks to receive any type of feedback, at which point I had forgotten all about the homework. After many years as a TA, I also found myself very frustrated with the common auto-grading tools, the hours and hours of manual grading and the onslaught of re-grade requests that came thereafter.
+From creator Leo Murri: "After many years as a student I found myself very frustrated in the following homework timeline: struggle on a homework assignment for weeks, submit something that may or may not be right and then wait a few more weeks to receive any type of feedback, at which point I had forgotten all about the homework. After many years as a TA, I also found myself very frustrated with the common auto-grading tools, the hours and hours of manual grading and the onslaught of re-grade requests that came thereafter."
 
 From these frustrations, the PennGrader was born!
 
 The PennGrader was built to allow students to get instant feedback and many opportunities for re-submission. After all, programming is about making mistakes and learning from feedback! Moreover, we wanted to allow TAs and Instructors to write their homework in any way they pleased, without having to worry about the structure of a specific auto-grader. The examples below are done using Jupyter Notebooks which is the most common use case, but you can use this for normal Python homework as well. 
 
-Here is what a student sees in his Homework Notebook. All a student has to do is write her solution and run the auto-grading cell.
+Here is what a student sees in their Homework Notebook. All a student has to do is write their solution and run the auto-grading cell.
 
 ![Sample Question](https://penngrader-wiki.s3.amazonaws.com/sample_question.gif)
 
@@ -21,7 +21,29 @@ Ok, ok, you might be saying to yourself: "That looks easy enough, but what about
 
 As you can see, this function tests that `addition_function(1,2) == 3`, if correct it adds 5 points to the `student_score`. The test must then return an integer tuple `(student_score, max_score)`, which is what will be displayed to the student. As you can see this type of test function gives the Instructor complete flexibility on what to test and how much partial credit to give. Remember that the answer that gets passed to the test case could be anything... a function, a class, a DataFrame, a list, a picture... anything! The PennGrader automatically serializes it and all its dependencies and ships to AWS for grading.
 
-To create homework for your class you will need a course `SECRET_KEY`. We will open to the public soon, however for now contact me at leonardo.murri1995@gmail.com if you are interested in using the PennGrader for your class.
+## Configuring the autograder for your course
+
+The PennGrader has a fairly simple setup -- you need to create a UUID and a name for each course offering.
+
+We have developed additionally [infrastructure](https://bitbucket.org/zives/penngrader-gradescope/src/master/) for pulling student grades into Gradescope upon notebook submission. (Email for permissions, since this includes some AWS endpoints.)
+
+1. Run the notebook `Adding a Course.ipynb` in this repo to create a UUID
+2. Copy `config.yaml.default` (from the PennGrader-Gradescope repo) to `config.yaml`.  Add your UUID to `config.yaml`, as `secret_id`
+3. Log into the AWS Console, go to DynamoDB and add an entry into the `Classes` table.  Set `secret_key` to the UUID, and `course_id` to a unique name for the course.  At Penn you will need to contact Zack Ives to register the key for your course.
+
+Next, go to Colab to set up the homework metadata:
+
+* Using the `Assignment Setup.ipynb` (in the Gradescope-PennGrader repo) and your `config.yaml`, register the homework assignment info (name, deadline, etc.).  To do this, update the `TOTAL_SCORE`, `MAX_DAILY_TEST_CASE_SUBMISSIONS`, and `DEADLINE`.  Beware that the deadline is in GMT.
+* Register the test cases for your homework assignment.
+* Update the homework assignment to use the **name** of your course, appended with `_HWx` where `x` is your homework number.  For instance, if we use `CIS520_F20` as our course name, we might have `CIS520_F20_HW3`.  Do **not** use the `secret_key` here.
+
+Finally, go to Gradescope.  For each homework:
+
+* Copy in your `config.yaml` from above, and update the `homework_num` to the homework number (0-5).
+
+Your homework specification should tell the students to upload their final notebook to Gradescope, with the `STUDENT_ID` set to their numeric PennID.  From this Gradescope will look up their Penngrader scores (as of the submission date).
+
+The TAs may add additional manual grading, or simply release the scores, as appropriate.
 
 [PennGrader_Homework_Template.ipynb](https://penngrader-wiki.s3.amazonaws.com/PennGrader_Homework_Template.ipynb)
 
@@ -134,7 +156,7 @@ The _Grader_ lambda gets triggered from an API Gateway URL from the student's Pe
 
 `{'homework_id' : ______, 'student_id' : ________, 'test_case_id' : ________, 'answer' : _______ }`
 
-The lambda will proceed by downloading the correct serialized _test_case_'s and _libraries_ from the _HomeworksTestCases_ DyanmoDB table. It will then deserialize these objects and extract the correct test case given the _test_case_id_ . import the correct libraries used by given test case. If the submission is valid the student score will be recorded in the backend. 
+The lambda will proceed by downloading the correct serialized _test_case_'s and _libraries_ from the _HomeworksTestCases_ DynamoDB table. It will then deserialize these objects and extract the correct test case given the _test_case_id_ . import the correct libraries used by given test case. If the submission is valid the student score will be recorded in the backend. 
 
 #### Grades
 

@@ -7,8 +7,8 @@ import types
 import ast
 
 # Lambda endpoints
-grader_api_url = 'https://wyv616tp17.execute-api.us-east-1.amazonaws.com/default/Grader'
-grader_api_key = 'Kd32fl3g3p917iM0zwjiO23Bitj4PO9ga4LektOa'
+grader_api_url = # TODO
+grader_api_key = # TODO
 
 # Request types
 STUDENT_GRADE_REQUEST = 'STUDENT_GRADE'

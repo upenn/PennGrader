@@ -7,4 +7,5 @@ penngrader/grader.py
 penngrader.egg-info/PKG-INFO
 penngrader.egg-info/SOURCES.txt
 penngrader.egg-info/dependency_links.txt
+penngrader.egg-info/requires.txt
 penngrader.egg-info/top_level.txt

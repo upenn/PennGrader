@@ -36,15 +36,17 @@ def validate_test_cases(test_cases):
 
 class PennGrader:
     
-    def __init__(self, homework_id, student_id):
+    def __init__(self, homework_id, student_id, secret):
         self.homework_id = homework_id
         self.student_id = student_id
+        self.secret = secret
             
     def grade(self, test_case_id, answer):
         payload = { 
             'homework_id' : self.homework_id, 
             'student_id' : self.student_id, 
             'test_case_id' : test_case_id,
+            'secret': secret,
             'answer' : serialize(answer)
         }
         self.send_payload(payload, grader_api_url, grader_api_key)

@@ -1,10 +1,10 @@
 Metadata-Version: 2.1
 Name: penngrader
-Version: 0.4
+Version: 0.5
 Summary: In-line python grader client.
-Home-page: https://github.com/LeoMurri/PennGrader
-Author: Leonardo Murri
-Author-email: leonardo.murri1995@gmail.com
+Home-page: https://github.com/zackives/PennGrader
+Author: Leonardo Murri and Zachary Ives
+Author-email: zives@cis.upenn.edu
 License: UNKNOWN
 Description: # PennGrader
         Welcome to the PennGrader!

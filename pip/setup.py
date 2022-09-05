@@ -3,15 +3,16 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 setuptools.setup(
      name='penngrader',  
-     version='0.4',
+     version='0.5',
      scripts=[],
-     author="Leonardo Murri",
-     author_email="leonardo.murri1995@gmail.com",
+     author="Leonardo Murri and Zachary Ives",
+     author_email="zives@cis.upenn.edu",
      description="In-line python grader client.",
      long_description=long_description,
    long_description_content_type="text/markdown",
-     url="https://github.com/LeoMurri/PennGrader",
+     url="https://github.com/zackives/PennGrader",
      packages=['penngrader'],
+     install_requires=['dill','pyyaml'],
      classifiers=[
          "Programming Language :: Python :: 3",
          "License :: OSI Approved :: MIT License",

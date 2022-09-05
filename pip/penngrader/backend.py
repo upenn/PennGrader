@@ -17,10 +17,10 @@ UPDATE_TESTS_REQUEST    = 'UPDATE_TESTS'
 GRADES_REQUEST          = 'ALL_STUDENTS_GRADES'
 
 # Lambda endpoints
-config_api_url = 'https://uhbuar7r8e.execute-api.us-east-1.amazonaws.com/default/HomeworkConfig'
-config_api_key = 'UPK6QWTou1EDI27uIqDW4FHIcMXRVRS4HN6lq148'
-grades_api_url = 'https://1rwoprdby6.execute-api.us-east-1.amazonaws.com/default/Grades'
-grades_api_key = 'lY1O5NDRML9zEyRvWhf0c1GeEYFe3BE710Olbh3R'
+config_api_url = # TODO
+config_api_key = # TODO
+grades_api_url = # TODO
+grades_api_key = # TODO
 
 def is_function(val):
     return type(val) == types.FunctionType

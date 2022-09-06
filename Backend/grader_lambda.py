@@ -15,10 +15,10 @@ try:
 except ImportError:
     import __builtin__ as builtins
 
-tests_api_url = 'https://kgskaaymdk.execute-api.us-east-1.amazonaws.com/default/gettestcase'
-tests_api_key = 'ogZFqWDoWe3G0yhkZOIFtaA00KEaL1jK3wLZlz90'
-records_api_url = 'https://xijh7o9657.execute-api.us-east-1.amazonaws.com/default/savestudent'
-records_api_key = 'ogZFqWDoWe3G0yhkZOIFtaA00KEaL1jK3wLZlz90'
+tests_api_url = ''
+tests_api_key = ''
+records_api_url = ''
+records_api_key = ''
 
 
 # Return Codes

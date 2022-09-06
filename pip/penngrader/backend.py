@@ -19,6 +19,7 @@ from yaml import Loader, Dumper
 HOMEWORK_ID_REQUEST     = 'GET_HOMEWORK_ID'
 UPDATE_METADATA_REQUEST = 'UPDATE_METADATA'
 UPDATE_TESTS_REQUEST    = 'UPDATE_TESTS'
+GRADES_REQUEST          = 'ALL_STUDENTS_GRADES'
 
 def is_function(val):
     return inspect.isfunction(val)

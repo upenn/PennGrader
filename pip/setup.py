@@ -2,8 +2,8 @@ import setuptools
 with open("README.md", "r") as fh:
     long_description = fh.read()
 setuptools.setup(
-     name='penngrader',  
-     version='0.5',
+     name='penn-grader',  
+     version='0.5.0',
      scripts=[],
      author="Leonardo Murri and Zachary Ives",
      author_email="zives@cis.upenn.edu",

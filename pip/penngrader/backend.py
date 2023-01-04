@@ -6,9 +6,14 @@ import ast
 import types
 import urllib.request
 import pandas as pd
+import numpy as np
 from datetime import datetime
+import inspect
+from difflib import SequenceMatcher
 
 from urllib.error import HTTPError
+import yaml
+from yaml import Loader, Dumper
 
 # Request types
 HOMEWORK_ID_REQUEST     = 'GET_HOMEWORK_ID'
@@ -16,19 +21,14 @@ UPDATE_METADATA_REQUEST = 'UPDATE_METADATA'
 UPDATE_TESTS_REQUEST    = 'UPDATE_TESTS'
 GRADES_REQUEST          = 'ALL_STUDENTS_GRADES'
 
-# Lambda endpoints
-config_api_url = 'https://uhbuar7r8e.execute-api.us-east-1.amazonaws.com/default/HomeworkConfig'
-config_api_key = 'UPK6QWTou1EDI27uIqDW4FHIcMXRVRS4HN6lq148'
-grades_api_url = 'https://1rwoprdby6.execute-api.us-east-1.amazonaws.com/default/Grades'
-grades_api_key = 'lY1O5NDRML9zEyRvWhf0c1GeEYFe3BE710Olbh3R'
-
 def is_function(val):
-    return type(val) == types.FunctionType
-
+    return inspect.isfunction(val)
 
 def is_module(val):
-    return type(val) == types.ModuleType
+    return inspect.ismodule(val)
 
+def is_class(val):
+    return inspect.isclass(val)
 
 def is_external(name):
     return name not in ['__builtin__','__builtins__', 'penngrader','_sh', '__main__'] and 'penngrader' not in name
@@ -36,17 +36,25 @@ def is_external(name):
 
 class PennGraderBackend:
     
-    
-    def __init__(self, secret_key, homework_number):
-        self.secret_key = secret_key
-        self.homework_number = homework_number
-        self.homework_id = self._get_homework_id()
-        if 'Error' not in self.homework_id:
-            response  = 'Success! Teacher backend initialized.\n\n'
-            response += 'Homework ID: {}'.format(self.homework_id)
-            print(response)
-        else:
-            print(self.homework_id)
+    def __init__(self, config_filename, homework_number):
+        with open(config_filename) as config_file:
+            config = yaml.safe_load(config_file)
+
+            self.config_api_url = config['config_api_url']
+            self.config_api_key = config['config_api_key']
+            self.grades_api_url = config['grades_api_url']
+            self.grades_api_key = config['grades_api_key']
+
+            self.secret_key      = config['secret_id']
+
+            self.homework_number = homework_number
+            self.homework_id = self._get_homework_id()
+            if 'Error' not in self.homework_id:
+                response  = 'Success! Teacher backend initialized.\n\n'
+                response += 'Homework ID: {}'.format(self.homework_id)
+                print(response)
+            else:
+                print(self.homework_id)
             
     def update_metadata(self, deadline, total_score, max_daily_submissions):
         request = { 
@@ -59,75 +67,20 @@ class PennGraderBackend:
                 'deadline' : deadline
             })
         }
-        print(self._send_request(request, config_api_url, config_api_key))
+        print(self._send_request(request, self.config_api_url, self.config_api_key))
     
             
-    def update_test_cases(self):
+    def update_test_cases(self, global_items):
         request = { 
             'homework_number' : self.homework_number, 
             'secret_key' : self.secret_key, 
             'request_type' : UPDATE_TESTS_REQUEST,
             'payload' : self._serialize({
                 'libraries'  : self._get_imported_libraries(),
-                'test_cases' : self._get_test_cases(),
+                'test_cases' : self._get_test_cases(global_items),
             })
         }
-        print(self._send_request(request, config_api_url, config_api_key))
-    
-    
-    def get_raw_grades(self, with_deadline = False):
-        request = { 
-            'homework_id' : self.homework_id, 
-            'secret_key' : self.secret_key, 
-            'request_type' : GRADES_REQUEST,
-        }
-        response = self._send_request(request, grades_api_url, grades_api_key)
-        if 'Error' in response:
-            print(response)
-            return None
-        else:
-            grades, deadline = self._deserialize(response)
-            if with_deadline:
-                return pd.DataFrame(grades), deadline
-            else:
-                return pd.DataFrame(grades)
-    
-    def get_grades(self):
-        grades_df, deadline = self.get_raw_grades(with_deadline = True)
-        if grades_df is not None:
-            
-            if grades_df.shape[0] == 0:
-                return "There have been no submissions."
-            
-            # Extract student ID from [student_submission_id]
-            grades_df['student_id'] = grades_df['student_submission_id'].apply(lambda x: str(x).split('_')[0])
-
-            # Convert to correct types
-            grades_df['timestamp'] = pd.to_datetime(grades_df['timestamp'])
-            grades_df['student_score'] = grades_df['student_score'].astype(int)
-
-            # Get total scores per students
-            scores_df = grades_df.groupby('student_id').sum().reset_index()[['student_id','student_score']]
-
-            # Get late days
-            late_df = grades_df.groupby('student_id').max().reset_index()[['student_id','timestamp']].rename(columns = {'timestamp':'latest_submission'})
-
-            # Calculate number of hours from local to UTC
-            local_to_utc = datetime.utcnow() - datetime.now()
-
-            # Subtract timechange offset from timestamp (lambdas are in UTC)
-            late_df['latest_submission'] = late_df['latest_submission'] - local_to_utc
-
-            # Add deadline from notebook context
-            late_df['deadline'] = pd.to_datetime(deadline)
-
-            # Add delta btw latest_submission and deadline
-            late_df['days_late'] = (late_df['latest_submission'] - late_df['deadline']).dt.ceil('D').dt.days
-
-            # Merge final grades
-            final_df = scores_df.merge(late_df, on = 'student_id')[['student_id','student_score','latest_submission','deadline','days_late']]
-            final_df['days_late'] = final_df['days_late'].apply(lambda x : x if x > 0 else 0)
-            return final_df
+        print(self._send_request(request, self.config_api_url, self.config_api_key))
     
     def get_question_grades(self, question_list):
         '''
@@ -169,18 +122,21 @@ class PennGraderBackend:
             'request_type' : HOMEWORK_ID_REQUEST,
             'payload' : self._serialize(None)
         }
-        return self._send_request(request, config_api_url, config_api_key)
+        return self._send_request(request, self.config_api_url, self.config_api_key)
 
         
     def _send_request(self, request, api_url, api_key):
         params = json.dumps(request).encode('utf-8')
         headers = {'content-type': 'application/json', 'x-api-key': api_key}
-        request = urllib.request.Request(api_url, data=params, headers=headers)
+        try:
+          request = urllib.request.Request(api_url, data=params, headers=headers)
+        except err:
+          return 'Request builder error: {}'.format(err.read().decode("utf-8")) 
         try:
             response = urllib.request.urlopen(request)
             return '{}'.format(response.read().decode('utf-8'))
         except HTTPError as error:
-            return 'Error: {}'.format(error.read().decode("utf-8")) 
+            return 'Http Error: {}'.format(error.read().decode("utf-8")) 
         
     
     def _get_imported_libraries(self):
@@ -189,22 +145,29 @@ class PennGraderBackend:
         for shortname, val in list(globals().items()):
             if is_module(val) and is_external(shortname):
                 base_package = val.__name__.split('.')[0]
-                packages.add(base_package)
-            if is_function(val) and is_external(val.__module__):
+                if base_package != 'google' and base_package != 'yaml':
+                  packages.add(base_package)
+            if (is_function(val) or is_class(val)) and is_external(val.__module__):
                 base_package = val.__module__.split('.')[0]
                 packages.add(base_package)
+        print ('Importing packages ', packages)
 
         # Get all sub-imports i.e import sklearn.svm etc 
         imports = set() # (module path , shortname )
         for shortname, val in list(globals().items()):
             if is_module(val) and is_external(shortname):
-                imports.add((val.__name__, shortname))
+                if val.__name__ in packages:
+                    packages.remove(val.__name__)
+                if shortname != 'drive' and shortname != 'yaml':
+                  imports.add((val.__name__, shortname))
 
+        print ('Importing libraries ', imports)
         # Get all function imports 
         functions = set() # (module path , function name)
         for shortname, val in list(globals().items()):
-            if is_function(val) and is_external(val.__module__):
-                functions.add((val.__module__, shortname))    
+            if is_function(val)and is_external(val.__module__):
+                functions.add((val.__module__, shortname))     
+        print ('Importing functions ', functions)
 
         return {
             'packages' : list(packages), 
@@ -213,14 +176,19 @@ class PennGraderBackend:
         }
 
     
-    def _get_test_cases(self):
+    def _get_test_cases(self, global_items):
         # Get all function imports 
         test_cases = {}
-        for shortname, val in list(globals().items()):
+        if not global_items:
+            global_items = globals().items()
+        for shortname, val in list(global_items):
             try:
-                if val and is_function(val) and not is_external(val.__module__) and 'penngrader' not in val.__module__:
-                    test_cases[shortname] = val  
+                if val and is_function(val) and not is_external(val.__module__) and \
+                'penngrader' not in val.__module__:
+                  test_cases[shortname] = inspect.getsource(val)   
+                  print ('Adding case {}', shortname)
             except:
+                print ('Skipping {}', shortname)
                 pass
         return test_cases
 

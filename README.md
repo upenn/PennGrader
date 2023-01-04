@@ -162,6 +162,8 @@ The _Grader_ lambda gets triggered from an API Gateway URL from the student's Pe
 
 The lambda will proceed by downloading the correct serialized _test_case_'s and _libraries_ from the _HomeworksTestCases_ DynamoDB table. It will then deserialize these objects and extract the correct test case given the _test_case_id_ . import the correct libraries used by given test case. If the submission is valid the student score will be recorded in the backend. 
 
+**Update** In recent versions, the _Grader_ Lambda has been substantially revamped. (1) It is now configured in its own [container](https://github.com/upenn/penngrader-lambda) so more libraries can be installed, (2) it has been moved to its own "sandbox" without access to AWS resources.
+
 #### Grades
 
 The grades lambda interfaces the TeacherBackend and student notebook with the Gradebook. Using this API Gateway triggered lambda the TeacherBackend client can request all grades for a given homework. The payload body used to trigger this lambda will need to include 

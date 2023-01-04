@@ -1,6 +1,7 @@
 # PennGrader
 Welcome to the PennGrader!  This autograder project was created by Leo Murri at the University of Pennsylvania, and it is currently maintained by the CIS faculty, staff, and students at Penn.
 
+## The PennGrader Philosophy
 Here at PennGrader, we believe that learning comes from lots of practice...and from making lots of mistakes. 
 
 From creator Leo Murri: "After many years as a student I found myself very frustrated in the following homework timeline: struggle on a homework assignment for weeks, submit something that may or may not be right and then wait a few more weeks to receive any type of feedback, at which point I had forgotten all about the homework. After many years as a TA, I also found myself very frustrated with the common auto-grading tools, the hours and hours of manual grading and the onslaught of re-grade requests that came thereafter."
@@ -9,11 +10,13 @@ From these frustrations, the PennGrader was born!
 
 The PennGrader was built to allow students to get instant feedback and many opportunities for re-submission. After all, programming is about making mistakes and learning from feedback! Moreover, we wanted to allow TAs and Instructors to write their homework in any way they pleased, without having to worry about the structure of a specific auto-grader. The examples below are done using Jupyter Notebooks which is the most common use case, but you can use this for normal Python homework as well. 
 
+## The Student-Facing Experience
+
 Here is what a student sees in their Homework Notebook. All a student has to do is write their solution and run the auto-grading cell.
 
 ![Sample Question](https://penngrader-wiki.s3.amazonaws.com/sample_question.gif)
 
-Through the magic of AWS Lambdas, the student's answer (in this case the `addition_function` object) is packaged and shipped to the backend where it is checked against the teacher-defined test case. Finally, a score is returned. All students' scores are saved in the backend and are easily accessible to the instructors. If at first they don't succeed, they can learn from their mistakes and try again.  (Yes, if you'd like, can set a maximum number of daily submissions to incentivize students to start early). This "grader" function can easily be used from any Jupyter notebook (even Google Colab), all you have to do is to `pip install penngrader`. See templates below.
+Through the magic of AWS Lambdas, the student's answer (in this case the `addition_function` object) is packaged and shipped to the backend where it is checked against the teacher-defined test case. Finally, a score is returned. All students' scores are saved in the backend and are easily accessible to the instructors. If at first they don't succeed, they can learn from their mistakes and try again.  (Yes, if you'd like, can set a maximum number of daily submissions to incentivize students to start early). This "grader" function can easily be used from any Jupyter notebook (even Google Colab), all you have to do is to `pip install penngrader` or the like. See templates below.
 
 Ok, ok, you might be saying to yourself: "That looks easy enough, but what about us TAs, we want something that simple too!" Well, look no further. The TAs/Instructors' experience is just as seamless. All TAs will share a __Teacher_Backend__ notebook, which contains all the test case functions. The logic of how testing is done is simple: whatever Python object gets passed through the `answer` field in the `grade(...)` function (see above) will be the input to the test case function (see below). In the above example, `addition_function` is passed as the answer to a test case named `"test_case_1"`. Therefore, the TAs will need to write a `test_case_1(addition_function)` function in the __Teacher_Backend__ notebook, as follows:
 
@@ -23,33 +26,34 @@ As you can see, this function tests that `addition_function(1,2) == 3`, if corre
 
 ## Configuring the autograder for your course
 
-The PennGrader has a fairly simple setup -- you need to create a UUID and a name for each course offering.
+The PennGrader has a fairly simple setup.  You will want to register the course using the [course registration tool](https://github.com/upenn/cis-penngrader-course).  This will create a series of YAML configuration files -- one for the teacher backend, one for the student notebook.
 
-We have developed additionally [infrastructure](https://bitbucket.org/zives/penngrader-gradescope/src/master/) for pulling student grades into Gradescope upon notebook submission. (Email for permissions, since this includes some AWS endpoints.)
+A third YAML file is for an additional (optional) component:  [Gradescope integration](https://github.com/upenn/penngrader-gradescope).  Through Gradescope integration, you may (1) pull the PennGrader score for each student and homework into Gradescope, (2) register additional, "hidden" tests if you like, (3) add a manual grading component.
 
-1. Run the notebook `Adding a Course.ipynb` in this repo to create a UUID
-2. Copy `config.yaml.default` (from the PennGrader-Gradescope repo) to `config.yaml`.  Add your UUID to `config.yaml`, as `secret_id`
-3. Log into the AWS Console, go to DynamoDB and add an entry into the `Classes` table.  Set `secret_key` to the UUID, and `course_id` to a unique name for the course.  At Penn you will need to contact Zack Ives to register the key for your course.
+1. Run the course registration tool.  Make note of `backend-config.yaml`, `notebook-config.yaml`, and `gradescope-config.yaml`.
+
+### Registering a homework
 
 Next, go to Colab to set up the homework metadata:
 
-* Using the `Assignment Setup.ipynb` (in the Gradescope-PennGrader repo) and your `config.yaml`, register the homework assignment info (name, deadline, etc.).  To do this, update the `TOTAL_SCORE`, `MAX_DAILY_TEST_CASE_SUBMISSIONS`, and `DEADLINE`.  Beware that the deadline is in GMT.
-* Register the test cases for your homework assignment.
-* Update the homework assignment to use the **name** of your course, appended with `_HWx` where `x` is your homework number.  For instance, if we use `CIS520_F20` as our course name, we might have `CIS520_F20_HW3`.  Do **not** use the `secret_key` here.
+* Using the [PennGrader_TeacherBackend.ipynb](./Test%20Client%20Notebook/PennGrader_TeacherBackend.ipynb) and your `backend-config.yaml` from above, register the homework assignment info (name, deadline, etc.).  To do this, update the `TOTAL_SCORE`, `MAX_DAILY_TEST_CASE_SUBMISSIONS`, and `DEADLINE`.  Beware that the deadline is in GMT.
+* Define test case functions for your homework assignment and run the notebook.
 
-Finally, go to Gradescope.  For each homework:
+[PennGrader_TeacherBackend.ipynb](./Test%20Client%20Notebook/PennGrader_TeacherBackend.ipynb)
 
-* Copy in your `config.yaml` from above, and update the `homework_num` to the homework number (0-5).
+### Defining a homework notebook
 
 Your homework specification should tell the students to upload their final notebook to Gradescope, with the `STUDENT_ID` set to their numeric PennID.  From this Gradescope will look up their Penngrader scores (as of the submission date).
 
+[PennGrader_Homework_Template.ipynb](./Test%20Client%20Notebook/PennGrader_Homework_Template.ipynb)
+
+### Linking to Gradescope
+
+1. Copy the `gradescope-config.yaml` to the PennGrader-Gradescope directory, renaming it to `config.yaml`.
+2. Update the `homework_num` in the `config.yaml` to the homework number.
+3. Set up the homework assignment as a Programming assignment in Gradescope.  Set an autograder score.  Zip and upload the PennGrader-Gradescope files (with config.yaml) as the autograder.
+
 The TAs may add additional manual grading, or simply release the scores, as appropriate.
-
-[PennGrader_Homework_Template.ipynb](https://penngrader-wiki.s3.amazonaws.com/PennGrader_Homework_Template.ipynb)
-
-[PennGrader_TeacherBackend.ipynb](https://penngrader-wiki.s3.amazonaws.com/PennGrader_TeacherBackend.ipynb)
-
-Download these two notebooks and launch them via Jupyter. They will show you how to add grading cells in your homework notebook and add write/update test cases via the teacher backend, as well as view student's grades.
 
 ## Behind the scenes...
 In the following section, I will go into detail about the system implementation. Below is the system design overview we will go into.
@@ -57,14 +61,14 @@ In the following section, I will go into detail about the system implementation.
 ![Architecture Design](https://penngrader-wiki.s3.amazonaws.com/design.png)
 
 ### Clients
-There are two pip installable clients, one for students and one for instructors. You can install these two clients by running `pip install penngrader` in your favorite terminal.  When creating a new homework download the [Homework_Template.ipynb](https://penngrader-wiki.s3.amazonaws.com/PennGrader_Homework_Template.ipynb) and the [TeacherBackend.ipynb](https://penngrader-wiki.s3.amazonaws.com/PennGrader_TeacherBackend.ipynb) notebooks and follow the instructions. More details are presented below.
+There are two pip installable clients, one for students and one for instructors. You can install these two clients by running `pip install penngrader` in your favorite terminal.  When creating a new homework download the [Homework_Template.ipynb](./Test%20Client%20Notebook/PennGrader_Homework_Template.ipynb) and the [TeacherBackend.ipynb](./Test%20Client%20Notebook/PennGrader_TeacherBackend.ipynb) notebooks and follow the instructions. More details are presented below.
 
 #### Student's Client: PennGrader
 
 The student's client will be embedded in the homework release notebook. Its main purpose will be to interface the student's homework with the AWS backend. This client is represented by the `PennGrader` class which needs to be initialized by the instructor when writing the homework as follows. Note: the HOMEWORK_ID needs to be filled in before releasing the notebook. The student should only enter his or her's student id. 
 
 ```
-import penngrader.grader
+from penngrader.grader import *
 grader = PennGrader(homework_id = HOMEWORK_ID, student_id = STUDENT_ID)
 ```
 
@@ -104,7 +108,7 @@ After running the above cell in a Jupyter Notebook, given a correct SECRET_KEY, 
 
 After initialization, the  `backend` can be used to 1) update metadata 2) edit/write test cases.
 
-You can edit the following metadata parmaters by runnin the following code:
+You can edit the following metadata parameters by running the following code:
 
 ```
 TOTAL_SCORE = 100

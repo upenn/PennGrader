@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: penngrader-client
-Version: 0.5.0
+Version: 0.5.1
 Summary: In-line python grader client.
 Home-page: https://github.com/zackives/PennGrader
 Author: Leonardo Murri and Zachary Ives

@@ -5,33 +5,14 @@ import dill
 import base64
 import types
 import ast
-<<<<<<< HEAD
-import hashlib
-
-# Lambda endpoints
-grader_api_url = 'https://wyv616tp17.execute-api.us-east-1.amazonaws.com/default/Grader'
-grader_api_key = 'Kd32fl3g3p917iM0zwjiO23Bitj4PO9ga4LektOa'
-=======
 import yaml
 from yaml import Loader, Dumper
->>>>>>> 532f5cf7005d3c33ee0d909b93b90e807e8782db
 
 # Request types
 STUDENT_GRADE_REQUEST = 'STUDENT_GRADE'
 
 class PennGrader:
     
-<<<<<<< HEAD
-    def __init__(self, course_id, homework_id, student_id):
-        if '_' in str(student_id):
-            raise Exception("Student ID cannot contain '_'")
-        self.homework_id = homework_id
-        sha_1 = hashlib.sha1()
-        key = str('v2' + student_id + course_id).encode('utf-8')
-        self.student_id = sha_1.hexdigest()
-        print('PennGrader initialized with Student ID: {}'.format(student_id))
-        print('\nMake sure this correct or we will not be able to store your grade')
-=======
     def __init__(self, config_filename, homework_id, student_id, secret):
         if '_' in str(student_id):
             raise Exception("Student ID cannot contain '_'")
@@ -47,7 +28,6 @@ class PennGrader:
             self.student_secret = str(secret)
             print('PennGrader initialized with Student ID: {}'.format(self.student_id))
             print('\nMake sure this correct or we will not be able to store your grade')
->>>>>>> 532f5cf7005d3c33ee0d909b93b90e807e8782db
 
         
     def grade(self, test_case_id, answer):

@@ -3,7 +3,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 setuptools.setup(
      name='penngrader-client',  
-     version='0.5.1',
+     version='0.5.2',
      scripts=[],
      author="Leonardo Murri and Zachary Ives",
      author_email="zives@cis.upenn.edu",
@@ -11,7 +11,7 @@ setuptools.setup(
      long_description=long_description,
    long_description_content_type="text/markdown",
      url="https://github.com/zackives/PennGrader",
-     packages=['penngrader-client'],
+     packages=['penngrader'],
      install_requires=['dill','pyyaml'],
      classifiers=[
          "Programming Language :: Python :: 3",

@@ -48,6 +48,7 @@ class PennGraderBackend:
             self.secret_key      = config['secret_id']
 
             self.homework_number = homework_number
+            print('Fetching homework number...')
             self.homework_id = self._get_homework_id()
             if 'Error' not in self.homework_id:
                 response  = 'Success! Teacher backend initialized.\n\n'

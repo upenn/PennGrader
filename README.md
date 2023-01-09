@@ -1,5 +1,6 @@
-# PennGrader
-Welcome to the PennGrader!  This autograder project was created by Leo Murri at the University of Pennsylvania, and it is currently maintained by the CIS faculty, staff, and students at Penn.
+# PennGrader Client
+
+Welcome to the PennGrader!  This autograder project was created by Leo Murri at the University of Pennsylvania, and it is currently maintained by the CIS faculty, staff, and students at Penn.  Note that this fork of the project has been split out from the backend, and comprises the Penngrader client *only*.
 
 ## The PennGrader Philosophy
 Here at PennGrader, we believe that learning comes from lots of practice...and from making lots of mistakes. 
@@ -161,6 +162,8 @@ The _Grader_ lambda gets triggered from an API Gateway URL from the student's Pe
 `{'homework_id' : ______, 'student_id' : ________, 'test_case_id' : ________, 'answer' : _______ }`
 
 The lambda will proceed by downloading the correct serialized _test_case_'s and _libraries_ from the _HomeworksTestCases_ DynamoDB table. It will then deserialize these objects and extract the correct test case given the _test_case_id_ . import the correct libraries used by given test case. If the submission is valid the student score will be recorded in the backend. 
+
+**Update** In recent versions, the _Grader_ Lambda has been substantially revamped. (1) It is now configured in its own [container](https://github.com/upenn/penngrader-lambda) so more libraries can be installed, (2) it has been moved to its own "sandbox" without access to AWS resources.
 
 #### Grades
 

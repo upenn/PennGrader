@@ -10,7 +10,7 @@ setuptools.setup(
      description="In-line python grader client.",
      long_description=long_description,
    long_description_content_type="text/markdown",
-     url="https://github.com/zackives/PennGrader",
+     url="https://github.com/upenn/PennGrader",
      packages=['penngrader'],
      install_requires=['dill','pyyaml'],
      classifiers=[

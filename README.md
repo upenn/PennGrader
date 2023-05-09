@@ -52,12 +52,12 @@ Your homework specification should tell the students to upload their final noteb
 
 1. Copy the `gradescope-config.yaml` to the PennGrader-Gradescope directory, renaming it to `config.yaml`.
 2. Update the `homework_num` in the `config.yaml` to the homework number.
-3. Set up the homework assignment as a Programming assignment in Gradescope.  Set an autograder score.  Zip and upload the PennGrader-Gradescope files (with config.yaml) as the autograder.
+3. Set up the homework assignment as a *Programming assignment* in Gradescope.  Set an autograder max score.  Zip and upload the PennGrader-Gradescope files (with the generated `gradescope-config.yaml` from above, renamed to `config.yaml`) as the autograder.
 
 The TAs may add additional manual grading, or simply release the scores, as appropriate.
 
 ## Behind the scenes...
-In the following section, I will go into detail about the system implementation. Below is the system design overview we will go into.
+In the following section, we will go into detail about the system implementation. Below is the system design overview we will go into.
 
 ![Architecture Design](https://penngrader-wiki.s3.amazonaws.com/design.png)
 
@@ -70,12 +70,14 @@ The student's client will be embedded in the homework release notebook. Its main
 
 ```
 from penngrader.grader import *
-grader = PennGrader(homework_id = HOMEWORK_ID, student_id = STUDENT_ID)
+grader = PennGrader('config.yaml', homework_id = HOMEWORK_ID, STUDENT_ID, SECRET)
 ```
 
 The HOMEWORK_ID is the string obtained when creating new homework via the teacher backend, see below. 
 
-STUDENT_ID is the student defined variable representing their 8-digit PennID. The student will need to run this cell at the beginning of the notebook to initialize the grader. After every question, the Instructor will also need to write a grading cell which the student will run to invoke the grader. A grading cell looks as follows:
+STUDENT_ID is the student defined variable representing their 8-digit PennID. The student will need to run this cell at the beginning of the notebook to initialize the grader. The SECRET should be set to the STUDENT_ID by default, but allows students to add a unique password protecting their grades. (The only issue: they tend to forget this or change it mis-tream!)
+
+After every question, the Instructor will also need to write a grading cell which the student will run to invoke the grader. A grading cell looks as follows:
 
 ```
 grader.grade(test_case_id = TEST_CASE_NAME, answer = ANSWER) 

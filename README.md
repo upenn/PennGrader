@@ -27,7 +27,9 @@ As you can see, this function tests that `addition_function(1,2) == 3`, if corre
 
 ## Configuring the autograder for your course
 
-The PennGrader has a fairly simple setup.  You will want to register the course using the [course registration tool](https://github.com/upenn/cis-penngrader-course).  This will create a series of YAML configuration files -- one for the teacher backend, one for the student notebook.
+The PennGrader has a fairly simple setup.  
+
+Within Penn, you can just email zives@cis.upenn.edu to request the registration of a course.  Otherwise you will want to register the course using the [course registration tool](https://github.com/upenn/cis-penngrader-course).  This will create a series of YAML configuration files -- one for the teacher backend, one for the student notebook.
 
 A third YAML file is for an additional (optional) component:  [Gradescope integration](https://github.com/upenn/penngrader-gradescope).  Through Gradescope integration, you may (1) pull the PennGrader score for each student and homework into Gradescope, (2) register additional, "hidden" tests if you like, (3) add a manual grading component.
 

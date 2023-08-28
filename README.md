@@ -1,6 +1,6 @@
 # PennGrader Client
 
-Welcome to the PennGrader!  This autograder project was created by Leo Murri at the University of Pennsylvania, and it is currently maintained by the CIS faculty, staff, and students at Penn.  Note that this fork of the project has been split out from the backend, and comprises the Penngrader client *only*.
+Welcome to the PennGrader!  This autograder project was created by Leo Murri at the University of Pennsylvania, and it is currently maintained by the CIS faculty, staff, and students at Penn.  Note that this fork of the project has been split out from the backend, and comprises the Penngrader client *only*.  The backend server-side component has been re-architected on containerized AWS Lambda.
 
 ## The PennGrader Philosophy
 Here at PennGrader, we believe that learning comes from lots of practice...and from making lots of mistakes. 

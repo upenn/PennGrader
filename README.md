@@ -54,7 +54,7 @@ Your homework specification should tell the students to upload their final noteb
 
 1. Copy the `gradescope-config.yaml` to the PennGrader-Gradescope directory, renaming it to `config.yaml`.
 2. Update the `homework_num` in the `config.yaml` to the homework number.
-3. Set up the homework assignment as a *Programming assignment* in Gradescope.  Set an autograder max score.  Zip and upload the PennGrader-Gradescope files (with the generated `gradescope-config.yaml` from above, renamed to `config.yaml`) as the autograder.
+3. Set up the homework assignment as a *Programming assignment* in Gradescope.  Set an autograder max score.  Zip and upload the PennGrader-Gradescope files (with the generated `gradescope-config.yaml` from above) as the autograder.  Note you'll need to update the YAML file each time to adjust the homework number.
 
 The TAs may add additional manual grading, or simply release the scores, as appropriate.
 

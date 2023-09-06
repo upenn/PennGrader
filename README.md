@@ -1,6 +1,6 @@
 # PennGrader Client
 
-Welcome to the PennGrader!  This autograder project was created by Leo Murri at the University of Pennsylvania, and it is currently maintained by the CIS faculty, staff, and students at Penn.  Note that this fork of the project has been split out from the backend, and comprises the Penngrader client *only*.
+Welcome to the PennGrader!  This autograder project was created by Leo Murri at the University of Pennsylvania, and it is currently maintained by the CIS faculty, staff, and students at Penn.  Note that this fork of the project has been split out from the backend, and comprises the Penngrader client *only*.  The backend server-side component has been re-architected on containerized AWS Lambda.
 
 ## The PennGrader Philosophy
 Here at PennGrader, we believe that learning comes from lots of practice...and from making lots of mistakes. 
@@ -27,7 +27,9 @@ As you can see, this function tests that `addition_function(1,2) == 3`, if corre
 
 ## Configuring the autograder for your course
 
-The PennGrader has a fairly simple setup.  You will want to register the course using the [course registration tool](https://github.com/upenn/cis-penngrader-course).  This will create a series of YAML configuration files -- one for the teacher backend, one for the student notebook.
+The PennGrader has a fairly simple setup.  
+
+Within Penn, you can just email zives@cis.upenn.edu to request the registration of a course.  Otherwise you will want to register the course using the [course registration tool](https://github.com/upenn/cis-penngrader-course).  This will create a series of YAML configuration files -- one for the teacher backend, one for the student notebook.
 
 A third YAML file is for an additional (optional) component:  [Gradescope integration](https://github.com/upenn/penngrader-gradescope).  Through Gradescope integration, you may (1) pull the PennGrader score for each student and homework into Gradescope, (2) register additional, "hidden" tests if you like, (3) add a manual grading component.
 
@@ -52,12 +54,12 @@ Your homework specification should tell the students to upload their final noteb
 
 1. Copy the `gradescope-config.yaml` to the PennGrader-Gradescope directory, renaming it to `config.yaml`.
 2. Update the `homework_num` in the `config.yaml` to the homework number.
-3. Set up the homework assignment as a Programming assignment in Gradescope.  Set an autograder score.  Zip and upload the PennGrader-Gradescope files (with config.yaml) as the autograder.
+3. Set up the homework assignment as a *Programming assignment* in Gradescope.  Set an autograder max score.  Zip and upload the PennGrader-Gradescope files (with the generated `gradescope-config.yaml` from above) as the autograder.  Note you'll need to update the YAML file each time to adjust the homework number.
 
 The TAs may add additional manual grading, or simply release the scores, as appropriate.
 
 ## Behind the scenes...
-In the following section, I will go into detail about the system implementation. Below is the system design overview we will go into.
+In the following section, we will go into detail about the system implementation. Below is the system design overview we will go into.
 
 ![Architecture Design](https://penngrader-wiki.s3.amazonaws.com/design.png)
 
@@ -70,12 +72,14 @@ The student's client will be embedded in the homework release notebook. Its main
 
 ```
 from penngrader.grader import *
-grader = PennGrader(homework_id = HOMEWORK_ID, student_id = STUDENT_ID)
+grader = PennGrader('config.yaml', homework_id = HOMEWORK_ID, STUDENT_ID, SECRET)
 ```
 
 The HOMEWORK_ID is the string obtained when creating new homework via the teacher backend, see below. 
 
-STUDENT_ID is the student defined variable representing their 8-digit PennID. The student will need to run this cell at the beginning of the notebook to initialize the grader. After every question, the Instructor will also need to write a grading cell which the student will run to invoke the grader. A grading cell looks as follows:
+STUDENT_ID is the student defined variable representing their 8-digit PennID. The student will need to run this cell at the beginning of the notebook to initialize the grader. The SECRET should be set to the STUDENT_ID by default, but allows students to add a unique password protecting their grades. (The only issue: they tend to forget this or change it mis-tream!)
+
+After every question, the Instructor will also need to write a grading cell which the student will run to invoke the grader. A grading cell looks as follows:
 
 ```
 grader.grade(test_case_id = TEST_CASE_NAME, answer = ANSWER) 

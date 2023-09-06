@@ -44,12 +44,13 @@ class PennGrader:
     def _send_request(self, request, api_url, api_key):
         params = json.dumps(request).encode('utf-8')
         headers = {'content-type': 'application/json', 'x-api-key': api_key}
-        request = urllib.request.Request(api_url, data=params, headers=headers)
         try:
-            response = urllib.request.urlopen(request)
-            return '{}'.format(response.read().decode('utf-8'))
-        except HTTPError as error:
-            return 'Error: {}'.format(error.read().decode("utf-8")) 
+            response = requests.post(api_url, data=params, headers=headers, timeout=10)
+            return response.text
+        except requests.exceptions.HTTPError as error:
+            raise SystemExit(error)
+        except requests.exceptions.Timeout as error:
+            raise SystemExit(error)
         
     def _serialize(self, obj):
         byte_serialized = dill.dumps(obj, recurse = True)

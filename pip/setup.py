@@ -3,7 +3,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 setuptools.setup(
      name='penngrader-client',  
-     version='0.5.2',
+     version='0.5.3',
      scripts=[],
      author="Leonardo Murri and Zachary Ives",
      author_email="zives@cis.upenn.edu",

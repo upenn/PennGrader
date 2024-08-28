@@ -29,9 +29,9 @@ As you can see, this function tests that `addition_function(1,2) == 3`, if corre
 
 The PennGrader has a fairly simple setup.  
 
-Within Penn, you can just email zives@cis.upenn.edu to request the registration of a course.  Otherwise you will want to register the course using the [course registration tool](https://github.com/upenn/cis-penngrader-course).  This will create a series of YAML configuration files -- one for the teacher backend, one for the student notebook.
+Within Penn, you can just email zives@cis.upenn.edu to request the registration of a course.  Otherwise you will want to register the course using the [course registration tool](https://github.com/upenn/cis-penngrader-course).  This will create a series of YAML configuration files -- one for the teacher backend (`backend-config.yaml`), one for the student notebook (`notebook-config.yaml`).
 
-A third YAML file is for an additional (optional) component:  [Gradescope integration](https://github.com/upenn/penngrader-gradescope).  Through Gradescope integration, you may (1) pull the PennGrader score for each student and homework into Gradescope, (2) register additional, "hidden" tests if you like, (3) add a manual grading component.
+A third YAML file (`gradescope-config.yaml`) is for an additional (optional) component:  [Gradescope integration](https://github.com/upenn/penngrader-gradescope).  Through Gradescope integration, you may (1) pull the PennGrader score for each student and homework into Gradescope, (2) register additional, "hidden" tests if you like, (3) add a manual grading component.
 
 1. Run the course registration tool.  Make note of `backend-config.yaml`, `notebook-config.yaml`, and `gradescope-config.yaml`.
 
@@ -40,7 +40,7 @@ A third YAML file is for an additional (optional) component:  [Gradescope integr
 Next, go to Colab to set up the homework metadata:
 
 * Using the [PennGrader_TeacherBackend.ipynb](./Test%20Client%20Notebook/PennGrader_TeacherBackend.ipynb) and your `backend-config.yaml` from above, register the homework assignment info (name, deadline, etc.).  To do this, update the `TOTAL_SCORE`, `MAX_DAILY_TEST_CASE_SUBMISSIONS`, and `DEADLINE`.  Beware that the deadline is in GMT.
-* Define test case functions for your homework assignment and run the notebook.
+* Define test case functions for your homework assignment and run the notebook.  **Please see below for some limitations on test case authoring**!
 
 [PennGrader_TeacherBackend.ipynb](./Test%20Client%20Notebook/PennGrader_TeacherBackend.ipynb)
 
@@ -48,13 +48,17 @@ Next, go to Colab to set up the homework metadata:
 
 Your homework specification should tell the students to upload their final notebook to Gradescope, with the `STUDENT_ID` set to their numeric PennID.  From this Gradescope will look up their Penngrader scores (as of the submission date).
 
+In principle you can include `notebook-config.yaml` with the student notebook. In practice you'll want to use a `%%writefile` cell to write the contents of `notebook-config.yaml` to a local file via the notebook.
+
 [PennGrader_Homework_Template.ipynb](./Test%20Client%20Notebook/PennGrader_Homework_Template.ipynb)
 
 ### Linking to Gradescope
 
+The Gradescope integration with PennGrader is simple: we don't attempt to re-run the test suite (which can be very tricky if the student has executed cells out of order). Rather, we simply look up the student's grade from the grades database.
+
 1. Copy the `gradescope-config.yaml` to the PennGrader-Gradescope directory, renaming it to `config.yaml`.
-2. Update the `homework_num` in the `config.yaml` to the homework number.
-3. Set up the homework assignment as a *Programming assignment* in Gradescope.  Set an autograder max score.  Zip and upload the PennGrader-Gradescope files (with the generated `gradescope-config.yaml` from above) as the autograder.  Note you'll need to update the YAML file each time to adjust the homework number.
+2. Update the `homework_num` in `gradescope-config.yaml` to the homework number.
+3. Set up the homework assignment as a *Programming assignment* in Gradescope.  Set an autograder max score.  Zip and upload the PennGrader-Gradescope files (with the generated `gradescope-config.yaml` from above) as the autograder.  **Note you'll need to update the YAML file in each homework to adjust the homework number.**
 
 The TAs may add additional manual grading, or simply release the scores, as appropriate.
 
@@ -64,7 +68,7 @@ In the following section, we will go into detail about the system implementation
 ![Architecture Design](https://penngrader-wiki.s3.amazonaws.com/design.png)
 
 ### Clients
-There are two pip installable clients, one for students and one for instructors. You can install these two clients by running `pip install penngrader` in your favorite terminal.  When creating a new homework download the [Homework_Template.ipynb](./Test%20Client%20Notebook/PennGrader_Homework_Template.ipynb) and the [TeacherBackend.ipynb](./Test%20Client%20Notebook/PennGrader_TeacherBackend.ipynb) notebooks and follow the instructions. More details are presented below.
+There are two pip installable clients, one for students and one for instructors. You can install these two clients by running `pip install penngrader-client` in your favorite terminal.  When creating a new homework download the [Homework_Template.ipynb](./Test%20Client%20Notebook/PennGrader_Homework_Template.ipynb) and the [TeacherBackend.ipynb](./Test%20Client%20Notebook/PennGrader_TeacherBackend.ipynb) notebooks and follow the instructions. More details are presented below.
 
 #### Student's Client: PennGrader
 
@@ -77,7 +81,7 @@ grader = PennGrader('config.yaml', homework_id = HOMEWORK_ID, STUDENT_ID, SECRET
 
 The HOMEWORK_ID is the string obtained when creating new homework via the teacher backend, see below. 
 
-STUDENT_ID is the student defined variable representing their 8-digit PennID. The student will need to run this cell at the beginning of the notebook to initialize the grader. The SECRET should be set to the STUDENT_ID by default, but allows students to add a unique password protecting their grades. (The only issue: they tend to forget this or change it mis-tream!)
+STUDENT_ID is the student defined variable representing their 8-digit PennID. The student will need to run this cell at the beginning of the notebook to initialize the grader. The SECRET should be set to the STUDENT_ID by default, but allows students to add a unique password protecting their grades. (The only issue: they tend to forget this or change it mid-stream! For this reason you may want to simply pass STUDENT_ID or some other hard-coded string.)
 
 After every question, the Instructor will also need to write a grading cell which the student will run to invoke the grader. A grading cell looks as follows:
 
@@ -97,19 +101,21 @@ grader.grade(test_case_id = TEST_CASE_NAME, answer = answer_df)
 
  That way, when the student runs this cell, the grader will automatically find the test function named TEST_CASE_NAME, serialize the `answer_df` python variable and ship it to AWS. The cool thing about the PennGrader is that you can pass pretty much anything as the answer.
 
+**PennGrader generally assumes *the same versions* of Python and the various libraries on the client and the server. By default, functions generally cannot be passed as parameters.  See below for suggestions.**
+
 #### Teacher's Client: PennGraderBackend
 
 The teacher client allows instructors to create and edit the test cases function mentioned earlier, as well as define multiple homework metadata parameters. As shown in the template notebooks linked above, you first need to initialize the _PennGraderBackend_ for a specific homework as follows:
 
 ```
-backend = PennGraderBackend(secret_key = SECRET_KEY, homework_number = HOMEWORK_NUMBER)
+backend = PennGraderBackend('backend-config.yaml', HOMEWORK_NUMBER)
 ```
 
-SECRET_KEY is the string variable obtained when creating a course. 
+The course secret token and other information should come from `backend-config.yaml`. 
 
 HOMEWORK_NUMBER identifies which homework number you are planning to write/edit. 
 
-After running the above cell in a Jupyter Notebook, given a correct SECRET_KEY,  the assigned HOMEWORK_ID string will be printed out. This HOMEWORK_ID needs to be copied into the initialization of the PennGrader student client for release. Just the homework id, without the secret key, will not allow students to see any of the test cases, so make sure the secret key does not get out. 
+After running the above cell in a Jupyter Notebook, given a correct YAML file, the assigned HOMEWORK_ID string will be printed out. This HOMEWORK_ID needs to be copied into the initialization of the PennGrader student client for release. Just the homework id, without the secret key, will not allow students to see any of the test cases, so make sure the secret key does not get out. 
 
 After initialization, the  `backend` can be used to 1) update metadata 2) edit/write test cases.
 
@@ -138,15 +144,15 @@ def test_case_name(answer_object_name):
 
 	# some kind of grading that adds or subtracts from the student_score #
 
-	return (student_score, max_score)
+	return (student_score, max_score, 'Diagnostic or error message')
 ```
 
-The test case function needs to return an integer tuple representing the student score for their answer and max number of points that can be earned in the given question.
+The test case function needs to return an integer tuple representing the student score for their answer, the max number of points that can be earned in the given question, and ideally a suggestion / warning if there was a mistake.  The diagnostic message will be ignored if the student received full credit.
 
 After writing all the test cases you need, simply run the following code in a cell and the PennGraderBackend class will automatically extract all user-defined functions in the current notebook and upload them to AWS.
 
 ```
-backend.update_test_cases()
+backend.update_test_cases(globals().items())
 ```
 
 A success message will print once the operation has succeeded. If loading a lot of external libraries this might take a few minutes.
@@ -167,7 +173,7 @@ The _Grader_ lambda gets triggered from an API Gateway URL from the student's Pe
 
 The lambda will proceed by downloading the correct serialized _test_case_'s and _libraries_ from the _HomeworksTestCases_ DynamoDB table. It will then deserialize these objects and extract the correct test case given the _test_case_id_ . import the correct libraries used by given test case. If the submission is valid the student score will be recorded in the backend. 
 
-**Update** In recent versions, the _Grader_ Lambda has been substantially revamped. (1) It is now configured in its own [container](https://github.com/upenn/penngrader-lambda) so more libraries can be installed, (2) it has been moved to its own "sandbox" without access to AWS resources.
+**Update** In recent versions, the _Grader_ Lambda has been substantially revamped. (1) It is now configured in its own [container](https://github.com/upenn/penngrader-lambda) so more libraries can be installed, (2) it has been moved to its own "sandbox" without access to AWS resources.  Given that Python is not a very secure language, our goal is to minimize exposure.
 
 #### Grades
 
@@ -229,4 +235,66 @@ The _Gradebook_ table contains all grading submissions and student scores. The t
 
 Note: Currently only the last submission is recorded, thus the latest student score will overwrite all previous scores.
 
+## Writing Effective Test Cases
 
+The thing to remember about test cases is that they are individually indexed functions, which are retrieved and called when `grader.grade()` is run.
+
+1. Make sure imports and variables are computed and set within the local symbol space of the function.  I.e., your functions should look like:
+
+```
+def myfn(x):
+  import pandas as pd
+  import math
+
+...
+```
+
+2. Beware of passing objects that belong to packages not installed on the backend, for instance Apache Spark DataFrames.  Additionally, files and other entities unique to the client machine cannot be pickled / passd.
+
+3. Python pickling is notoriously fickle about version mismatches between client and server.  Try to make sure the versions are at least close. You might consider converting more esoteric data into JSON or another similar format, passing as a string, and decoding on the server side.
+
+4. Passing functions must be done as strings, largely to insulate against version mismatches.  You can use the `getsource()` function in the `dill` package to get source code for a client-side function. On the server side you can use `exec` (but be careful to output the results in a new symbol table). Here is an example of how this is done.
+
+Client side:
+```
+def bob(name: str) -> bool:
+  first_name = name.split(' ')[0].lower().strip()
+  return first_name == 'bob' or \
+    first_name == 'robert' or \
+    first_name == 'roberta'
+
+from dill.source import getsource
+bob_test(getsource(bob))
+```
+
+Server side test case:
+```
+def bob_test(f):
+  import dill
+
+  # Dictionary for new functions + variables
+  d = {}
+  # Add all global + local symbols to fn context
+  symbols = {}
+  symbols.update(globals())
+  symbols.update(locals())
+  # Execute user code within context, adding new
+  # symbols into dictionary d
+  exec(f, symbols, d)
+  # Function bob should be inside the dictionary
+  if not 'bob' in d:
+    raise RuntimeException("No function called `bob` was defined\n")
+  bob = d['bob']
+
+  if not callable(bob):
+    return (0, 3, 'bob needs to be a function\n')
+
+  if bob('Robertasmith'):
+    return (0, 3, 'bob should only accept first names as specified\n')
+  elif not bob('bob'):
+    return (1, 3, 'bob should match different cases\n')
+  elif not bob('robert') or not bob('roberta'):
+    return (1, 3, 'bob should match different name\n')
+  else:
+    return (3, 3)
+```

@@ -283,7 +283,7 @@ def bob_test(f):
   exec(f, symbols, d)
   # Function bob should be inside the dictionary
   if not 'bob' in d:
-    raise RuntimeException("No function called `bob` was defined\n")
+    raise RuntimeError("No function called `bob` was defined\n")
   bob = d['bob']
 
   if not callable(bob):

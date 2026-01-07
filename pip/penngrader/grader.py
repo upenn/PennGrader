@@ -25,7 +25,10 @@ class PennGrader:
             self.grader_api_key = config['grader_api_key']
             self.token_generator_api_key = config.get('token_generator_api_key')
 
-            self.homework_id = course_name + "_HW" + str(homework_id)
+            if isinstance(homework_id, int):
+                self.homework_id = course_name + "_HW" + str(homework_id)
+            else:
+                self.homework_id = homework_id
             self.student_id = str(student_id)
             self.student_secret = str(secret)
             self.course_name = course_name
@@ -51,6 +54,18 @@ class PennGrader:
         }
         response = self._send_request(request, self.grader_api_url, self.grader_api_key)
         
+        try:
+            if response is not None:
+                response = json.loads(response)
+                if response.get('statusCode') == 'Error':
+                    return 'There was an error on the backend: ' + response['body']
+                
+                if isinstance(response.get('body'), dict):
+                    return response.get('body', response)
+                return response
+        except:
+            pass
+
         return response
 
     def _send_request(self, request, api_url, api_key):

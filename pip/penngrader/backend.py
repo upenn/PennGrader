@@ -19,6 +19,7 @@ from yaml import Loader, Dumper
 HOMEWORK_ID_REQUEST     = 'GET_HOMEWORK_ID'
 UPDATE_METADATA_REQUEST = 'UPDATE_METADATA'
 UPDATE_TESTS_REQUEST    = 'UPDATE_TESTS'
+GRADES_REQUEST          = 'ALL_STUDENTS_GRADES'
 
 def is_function(val):
     return inspect.isfunction(val)
@@ -41,6 +42,11 @@ class PennGraderBackend:
 
             self.config_api_url = config['config_api_url']
             self.config_api_key = config['config_api_key']
+            self.grades_api_url = config['grades_api_url']
+            self.grades_api_key = config['grades_api_key']
+            self.course_name = config['course_id']
+            self.token_generator_url = config['token_generator_url']
+            self.token_generator_api_key = config.get('token_generator_api_key')
 
             self.secret_key      = config['secret_id']
 
@@ -52,7 +58,7 @@ class PennGraderBackend:
                 response += 'Homework ID: {}'.format(self.homework_id)
                 print(response)
             else:
-                print(self.homework_id)
+                print("Error retrieving {}".format(self.homework_id))
             
     def update_metadata(self, deadline, total_score, max_daily_submissions):
         request = { 
@@ -67,6 +73,31 @@ class PennGraderBackend:
         }
         print(self._send_request(request, self.config_api_url, self.config_api_key))
     
+    def _get_tokens(self, test_case_id, student_id, student_secret):
+        """Request tokens from token_generator for grading this test case."""
+        token_request = {
+            'student_id': student_id,
+            'student_secret': student_secret,
+            'test_case': test_case_id,
+            'course_name': self.course_name
+        }
+        params = json.dumps(token_request).encode('utf-8')
+        headers = {'content-type': 'application/json'}
+        if self.token_generator_api_key:
+            headers['x-api-key'] = self.token_generator_api_key
+            
+        try:
+            response = urllib.request.urlopen(
+                urllib.request.Request(self.token_generator_url, data=params, headers=headers)
+            )
+            tokens = json.loads(response.read().decode('utf-8'))
+            
+            if tokens.get('statusCode') != 200:
+                raise SystemExit('Token generation error: {}'.format(tokens.get('body')))
+            
+            return json.loads(tokens['body'])
+        except HTTPError as error:
+            raise SystemExit('Token generation error: {}'.format(error.read().decode('utf-8')))
             
     def update_test_cases(self, global_items):
         request = { 
@@ -87,7 +118,12 @@ class PennGraderBackend:
             'request_type' : HOMEWORK_ID_REQUEST,
             'payload' : self._serialize(None)
         }
-        return self._send_request(request, self.config_api_url, self.config_api_key)
+        resp = json.loads(self._send_request(request, self.config_api_url, self.config_api_key))
+        
+        if resp.get('statusCode') == 200:
+            return resp.get('body')
+        else:
+            return 'Error fetching homework ID: {}'.format(resp.get('body'))
 
         
     def _send_request(self, request, api_url, api_key):
@@ -157,6 +193,80 @@ class PennGraderBackend:
                 pass
         return test_cases
 
+    def get_raw_grades(self, homework_id, student_id, secret=None, with_deadline=False) -> pd.DataFrame | tuple[pd.DataFrame, str]:
+        if secret is None:
+            secret = student_id
+        tokens = self._get_tokens(self.homework_id, student_id, secret)
+        request = {
+            'homework_id': homework_id,
+            'student_id': student_id,
+            'secret_key': self.secret_key,
+            'request_type': GRADES_REQUEST,
+            'token1': tokens.get('token1'),
+            'token2': tokens.get('token2')
+        }
+        response = self._send_request(request, self.grades_api_url, self.grades_api_key)
+        if 'Error' in response:
+            print(response)
+            return None
+        else:
+            result = json.loads(response)
+            if result.get('statusCode') != 200:
+                print('Error fetching grades: {}'.format(result.get('body')))
+                return None
+            
+            (grades, deadline, max_daily_submissions, max_score) = json.loads(result.get('body'))
+            
+            if len(grades) == 0:
+                print('No grades found for student ID {} and homework ID: {}'.format(student_id, homework_id))
+                return pd.DataFrame()
+            if with_deadline:
+                return pd.DataFrame(grades), deadline
+            else:
+                return pd.DataFrame(grades)
+
+    def get_grades(self, id) -> pd.DataFrame | str | None:
+        result = self.get_raw_grades(self.homework_id, id, with_deadline=True)
+        if isinstance(result, tuple):
+            grades_df, deadline = result
+        else:
+            return result
+        if grades_df is not None:
+
+            if grades_df.shape[0] == 0:
+                return "There have been no submissions."
+
+            # Extract student ID from [student_submission_id]
+            grades_df['student_id'] = grades_df['student_submission_id'].apply(lambda x: str(x).split('_')[0])
+
+            # Convert to correct types
+            grades_df['timestamp'] = pd.to_datetime(grades_df['timestamp'])
+            grades_df['student_score'] = grades_df['student_score'].astype(int)
+
+            # Get total scores per students
+            scores_df = grades_df[['student_id', 'student_score']].groupby('student_id').sum().reset_index()
+
+            # Get late days
+            late_df = grades_df.groupby('student_id').max().reset_index()[['student_id', 'timestamp']].rename(
+                columns={'timestamp': 'latest_submission'})
+
+            # Calculate number of hours from local to UTC
+            local_to_utc = datetime.utcnow() - datetime.now()
+
+            # Subtract timechange offset from timestamp (lambdas are in UTC)
+            late_df['latest_submission'] = late_df['latest_submission'] - local_to_utc
+
+            # Add deadline from notebook context
+            late_df['deadline'] = pd.to_datetime(deadline)
+
+            # Add delta btw latest_submission and deadline
+            late_df['days_late'] = (late_df['latest_submission'] - late_df['deadline']).dt.ceil('D').dt.days
+
+            # Merge final grades
+            final_df = scores_df.merge(late_df, on='student_id')[
+                ['student_id', 'student_score', 'latest_submission', 'deadline', 'days_late']]
+            final_df['days_late'] = final_df['days_late'].apply(lambda x: x if x > 0 else 0)
+            return final_df[final_df['student_id'] == id]
     
     def _serialize(self, obj):
         '''Dill serializes Python object into a UTF-8 string'''

@@ -58,7 +58,7 @@ class PennGraderBackend:
                 response += 'Homework ID: {}'.format(self.homework_id)
                 print(response)
             else:
-                print("Error retrieving {}".format(self.homework_id))
+                raise RuntimeError("Error retrieving {}".format(self.homework_id))
             
     def update_metadata(self, deadline, total_score, max_daily_submissions):
         request = { 
@@ -71,7 +71,15 @@ class PennGraderBackend:
                 'deadline' : deadline
             })
         }
-        print(self._send_request(request, self.config_api_url, self.config_api_key))
+        result = self._send_request(request, self.config_api_url, self.config_api_key)
+        if result is not None:
+            result = json.loads(result)
+            if result.get('statusCode') == 200:
+                print('Metadata updated successfully.')
+            else:
+                print('Error updating metadata: {}'.format(result['body']))
+        else:
+            print('Error updating metadata: No response from server.')
     
     def _get_tokens(self, test_case_id, student_id, student_secret):
         """Request tokens from token_generator for grading this test case."""
@@ -109,7 +117,15 @@ class PennGraderBackend:
                 'test_cases' : self._get_test_cases(global_items),
             })
         }
-        print(self._send_request(request, self.config_api_url, self.config_api_key))
+        result = self._send_request(request, self.config_api_url, self.config_api_key)
+        if result is not None:
+            result = json.loads(result)
+            if result.get('statusCode') == 200:
+                print(f'{result["body"]}.')
+            else:
+                print('Error updating test cases: {}'.format(result['body']))
+        else:
+            print('Error updating test cases: No response from server.')
     
     def _get_homework_id(self):
         request = { 

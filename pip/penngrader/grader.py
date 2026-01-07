@@ -57,16 +57,12 @@ class PennGrader:
         try:
             if response is not None:
                 response = json.loads(response)
-                if response.get('statusCode') == 'Error':
-                    return 'There was an error on the backend: ' + response['body']
-                
-                if isinstance(response.get('body'), dict):
-                    return response.get('body', response)
-                return response
+                if response.get('statusCode') != 200:
+                    print('There was an error on the backend: ' + response['body'])
+                else:
+                    print(response.get('body', response))
         except:
             pass
-
-        return response
 
     def _send_request(self, request, api_url, api_key):
         params = json.dumps(request).encode('utf-8')

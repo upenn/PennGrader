@@ -94,7 +94,19 @@ class PennGrader:
             )
             tokens = json.loads(response.read().decode('utf-8'))
             
-            return json.loads(tokens['body'])
+            if not isinstance(tokens, dict) or 'body' not in tokens:
+                raise SystemExit('Invalid token response: {}'.format(tokens))
+            
+            try:
+                if not isinstance(tokens['body'], str):
+                    return tokens['body']
+                
+                if tokens['body'].startswith('Could not retrieve course secret'):
+                    raise SystemExit('Error contacting server: {}'.format(tokens['body']))
+                    
+                return json.loads(tokens['body'])
+            except json.JSONDecodeError:
+                return tokens['body']
         except HTTPError as error:
             raise SystemExit('Token generation error: {}'.format(error.read().decode('utf-8')))
         
